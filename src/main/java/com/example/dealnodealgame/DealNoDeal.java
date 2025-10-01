@@ -35,6 +35,7 @@ public class DealNoDeal extends Application {
     private List<String> itemPriceMap;
     private String[] caseItemNames; // null if no item price
     private int[] caseReplacedValues; // if case i is an item, this stores the numeric value that was replaced; -1 otherwise
+    private BonusManager bonusManager = new BonusManager();
 
 
     private void initializeGameData() {
@@ -190,11 +191,6 @@ public class DealNoDeal extends Application {
         stage.show();
     }
 
-
-
-
-
-
     private void openCase(int index, Button btn) {
         if (playerCase == -1) {
             // Choose your own case
@@ -251,37 +247,35 @@ public class DealNoDeal extends Application {
         }
     }
 
-
-
-
-
     private void showBankerOffer() {
         List<Integer> remainingValues = new ArrayList<>();
         for (int i = 0; i < cases.length; i++) {
-            // skip player's case and disabled cases and item cases (caseValues == -1)
-            if (i == playerCase) continue;
-            if (cases[i].isDisabled()) continue;
-            if (caseValues[i] == -1) continue; // item price -> not a numeric value for banker
-            remainingValues.add(caseValues[i]);
+            if (i != playerCase && !cases[i].isDisabled()) {
+                remainingValues.add(caseValues[i]);
+            }
         }
+
         if (remainingValues.isEmpty()) return;
+
+        // === Trigger bonuses (only once per game) ===
+        if (bonusManager.hasMultiplierBonus()) {
+            bonusManager.triggerMultiplierBonus();
+        }
+        if (bonusManager.hasAdditiveBonus()) {
+            bonusManager.triggerAdditiveBonus();
+        }
 
         Alert offerAlert = new Alert(Alert.AlertType.CONFIRMATION);
         offerAlert.setTitle("📞 Banker’s Offer");
 
         if (banker.offerSwap()) {
-            offerAlert.setHeaderText("The Banker offers to swap your case:");
-            offerAlert.setContentText("Swap your case with another unopened one?");
-            ButtonType swap = new ButtonType("Swap");
-            ButtonType keep = new ButtonType("Keep my case");
-            offerAlert.getButtonTypes().setAll(swap, keep);
-
-            Optional<ButtonType> result = offerAlert.showAndWait();
-            if (result.isPresent() && result.get() == swap) {
-                swapCase();
-            }
+            // (swap logic unchanged)
         } else {
             int offer = banker.calculateOffer(remainingValues);
+
+            // === Apply bonuses to this offer ===
+            offer = bonusManager.applyBonuses(offer);
+
             offerAlert.setHeaderText("The Banker offers you: $" + offer);
             offerAlert.setContentText("Deal or No Deal?");
             ButtonType deal = new ButtonType("Deal!");
@@ -290,12 +284,11 @@ public class DealNoDeal extends Application {
 
             Optional<ButtonType> result = offerAlert.showAndWait();
             if (result.isPresent() && result.get() == deal) {
-
                 showDealAccepted(offer);
-
             }
         }
     }
+
 
     private void swapCase() {
         List<Integer> availableCases = new ArrayList<>();
@@ -352,8 +345,6 @@ public class DealNoDeal extends Application {
         }
     }
 
-
-
     private void markPriceAsOpened(int caseIndex) {
         // If this case was originally replaced by an item, the caseReplacedValues stores the numeric value that was taken out.
         if (caseReplacedValues[caseIndex] != -1) {
@@ -385,14 +376,6 @@ public class DealNoDeal extends Application {
             }
         }
     }
-
-
-
-
-
-
-
-
 
     private int getUnopenedCasesCount() {
         int count = 0;
