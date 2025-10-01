@@ -269,7 +269,15 @@ public class DealNoDeal extends Application {
         offerAlert.setTitle("📞 Banker’s Offer");
 
         if (banker.offerSwap()) {
-            // (swap logic unchanged)
+            offerAlert.setHeaderText("The Banker offers to swap your case:");
+            offerAlert.setContentText("Swap your case with another unopened one?");
+            ButtonType swap = new ButtonType("Swap");
+            ButtonType keep = new ButtonType("Keep my case");
+            offerAlert.getButtonTypes().setAll(swap, keep);
+            Optional<ButtonType> result = offerAlert.showAndWait();
+            if (result.isPresent() && result.get() == swap) {
+                swapCase();
+            }
         } else {
             int offer = banker.calculateOffer(remainingValues);
 
