@@ -1,6 +1,5 @@
 package com.example.dealnodealgame;
 
-
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.layout.GridPane;
@@ -8,20 +7,19 @@ import javafx.scene.layout.GridPane;
 import java.util.*;
 
 public class BonusManager {
-    private boolean multiplierBonusActive;   // 5 cases: * or /
-    private boolean additiveBonusActive;     // 10 cases: + or -
+    private boolean multiplierBonusActive;
+    private boolean additiveBonusActive;
     private boolean multiplierUsed = false;
     private boolean additiveUsed = false;
 
-    private double multiplier = 1.0;  // default no effect
-    private int additive = 0;         // default no effect
+    private double multiplier = 1.0;
+    private int additive = 0;
 
     private Random random = new Random();
 
     public BonusManager() {
-        // Randomly decide if bonuses appear (each independently)
-        multiplierBonusActive = random.nextBoolean(); // 50% chance
-        additiveBonusActive = random.nextBoolean();   // 50% chance
+        multiplierBonusActive = random.nextBoolean();
+        additiveBonusActive = random.nextBoolean();
     }
 
     public boolean hasMultiplierBonus() {
@@ -36,16 +34,16 @@ public class BonusManager {
         if (!hasMultiplierBonus()) return;
 
         List<String> options = new ArrayList<>();
-        // Create 5 random multiplier/divider cases
         for (int i = 0; i < 5; i++) {
             int q = random.nextInt(4) + 2; // quotient 2–5
             String symbol = random.nextBoolean() ? "*" : "/";
             options.add(symbol + q);
         }
 
-        String choice = showBonusDialog("Multiplier Bonus", options);
-
+        String choice = showBonusChoiceDialog("Multiplier Bonus", options);
         if (choice != null) {
+            showBonusResult("Multiplier Bonus Selected", choice);
+
             if (choice.startsWith("*")) {
                 int q = Integer.parseInt(choice.substring(1));
                 multiplier = q;
@@ -61,16 +59,16 @@ public class BonusManager {
         if (!hasAdditiveBonus()) return;
 
         List<String> options = new ArrayList<>();
-        // Create 10 random additive/subtractive cases
         for (int i = 0; i < 10; i++) {
             int val = (random.nextInt(20) + 1) * 100; // 100–2000
             String symbol = random.nextBoolean() ? "+" : "-";
             options.add(symbol + val);
         }
 
-        String choice = showBonusDialog("Additive Bonus", options);
-
+        String choice = showBonusChoiceDialog("Additive Bonus", options);
         if (choice != null) {
+            showBonusResult("Additive Bonus Selected", choice);
+
             if (choice.startsWith("+")) {
                 additive = Integer.parseInt(choice.substring(1));
             } else {
@@ -85,21 +83,21 @@ public class BonusManager {
 
         if (multiplier != 1.0) {
             modified = modified * multiplier;
-            multiplier = 1.0; // reset after use
+            multiplier = 1.0;
         }
 
         if (additive != 0) {
             modified = modified + additive;
-            additive = 0; // reset after use
+            additive = 0;
         }
 
-        return Math.max(1, (int) modified); // prevent negative or zero
+        return Math.max(1, (int) modified);
     }
 
-    private String showBonusDialog(String title, List<String> options) {
+    private String showBonusChoiceDialog(String title, List<String> options) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
-        alert.setHeaderText("Choose one of the bonus cases!");
+        alert.setHeaderText("Choose one bonus case!");
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -110,6 +108,7 @@ public class BonusManager {
         for (int i = 0; i < options.size(); i++) {
             String opt = options.get(i);
             Button btn = new Button("Case " + (i + 1));
+            btn.setPrefWidth(80);
             btn.setOnAction(e -> {
                 chosen[0] = opt;
                 alert.close();
@@ -121,5 +120,12 @@ public class BonusManager {
         alert.showAndWait();
         return chosen[0];
     }
-}
 
+    private void showBonusResult(String title, String bonus) {
+        Alert resultAlert = new Alert(Alert.AlertType.INFORMATION);
+        resultAlert.setTitle(title);
+        resultAlert.setHeaderText("Bonus Revealed!");
+        resultAlert.setContentText("You got: " + bonus);
+        resultAlert.showAndWait();
+    }
+}
